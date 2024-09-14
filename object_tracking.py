@@ -20,8 +20,9 @@ class Tracker:
 
         # Increasing contrast using adaptive histogram equalization
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe = clahe.apply(cv2.cvtColor(img_blurred, cv2.COLOR_BGR2GRAY))
 
-        return clahe.apply(cv2.cvtColor(img_blurred, cv2.COLOR_BGR2GRAY))
+        return clahe
 
     def _create_template(self) -> cv2.numpy.ndarray:
         x, y, w, h = [int(i) for i in self.bbox]
@@ -32,9 +33,9 @@ class Tracker:
         return template_enhanced
 
     def match_template(self, frame, threshold):
-        template_enhanced = self._enhance_image(frame)
+        frame_enhanced = self._enhance_image(frame)
 
-        matched = cv2.matchTemplate(template_enhanced, self.template, cv2.TM_CCOEFF_NORMED)
+        matched = cv2.matchTemplate(frame_enhanced, self.template, cv2.TM_CCOEFF_NORMED)
 
         # Most similar contour
         _, max_val, _, max_loc = cv2.minMaxLoc(matched)
@@ -48,7 +49,7 @@ class Tracker:
     def update(self, frame):
         return self.track_method.update(frame)
     
-    def track(self):
+    def track(self, threshold):
         while True:
                 ret, frame = self.video_capture.read()
                 if not ret:
@@ -60,8 +61,10 @@ class Tracker:
                     # Drawing contour
                     x, y, w, h = [int(i) for i in bbox]
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    cv2.putText(frame, f'X:{x}', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    cv2.putText(frame, f'Y:{y}', (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 else:
-                    is_found, bbox = self.match_template(frame, 0.9)
+                    is_found, bbox = self.match_template(frame, threshold)
 
                     if is_found:
                         self.track_method.init(frame, bbox)
@@ -77,8 +80,8 @@ class Tracker:
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    source = "Sources/circle.mp4"
+    source = "Sources/napkins.mp4"
 
     tracker = Tracker(source)
-    tracker.track()
+    tracker.track(threshold=0.9)
     
