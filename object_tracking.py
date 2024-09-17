@@ -49,7 +49,7 @@ class Tracker:
     def update(self, frame):
         return self.track_method.update(frame)
     
-    def track(self, threshold):
+    def track(self, threshold=0.9):
         while True:
                 ret, frame = self.video_capture.read()
                 if not ret:
@@ -78,10 +78,4 @@ class Tracker:
 
         self.video_capture.release()
         cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    source = "Sources/napkins.mp4"
-
-    tracker = Tracker(source)
-    tracker.track(threshold=0.9)
     
