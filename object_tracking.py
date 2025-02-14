@@ -34,8 +34,9 @@ class Tracker:
 
     def match_template(self, frame, threshold):
         frame_enhanced = self._enhance_image(frame)
+        cvt_frame = cv2.cvtColor(frame_enhanced, cv2.COLOR_BGR2GRAY)
 
-        matched = cv2.matchTemplate(frame_enhanced, self.template, cv2.TM_CCOEFF_NORMED)
+        matched = cv2.matchTemplate(cvt_frame, self.template, cv2.TM_CCOEFF_NORMED)
 
         # Most similar contour
         _, max_val, _, max_loc = cv2.minMaxLoc(matched)
@@ -51,31 +52,30 @@ class Tracker:
     
     def track(self, threshold=0.9):
         while True:
-                ret, frame = self.video_capture.read()
-                if not ret:
-                    break
+            ret, frame = self.video_capture.read()
+            if not ret:
+                break
 
-                is_updated, bbox = self.update(frame)
+            is_updated, bbox = self.update(frame)
 
-                if is_updated:
-                    # Drawing contour
-                    x, y, w, h = [int(i) for i in bbox]
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                    cv2.putText(frame, f'X:{x}', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                    cv2.putText(frame, f'Y:{y}', (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            if is_updated:
+                # Drawing contour
+                x, y, w, h = [int(i) for i in bbox]
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                cv2.putText(frame, f'X:{x}', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.putText(frame, f'Y:{y}', (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            else:
+                is_found, bbox = self.match_template(frame, threshold)
+
+                if is_found:
+                    self.track_method.init(frame, bbox)
                 else:
-                    is_found, bbox = self.match_template(frame, threshold)
+                    cv2.putText(frame, "Lost", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-                    if is_found:
-                        self.track_method.init(frame, bbox)
-                    else:
-                        cv2.putText(frame, "Lost", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.imshow('Object Tracking', frame)
 
-                cv2.imshow('Object Tracking', frame)
-
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
         self.video_capture.release()
-        cv2.destroyAllWindows()
-    
+        cv2.destroyAllWindows()   
