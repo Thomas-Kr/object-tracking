@@ -1,6 +1,6 @@
 from object_tracking import Tracker
 
-source = 0
+source = "Sources/maxima_4.mov"
 
-tracker = Tracker(source)
-tracker.track(0.9)
+tracker = Tracker(source, FPS=5)
+tracker.track(0.8)
